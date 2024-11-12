@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Analysis Page</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+
+    <h1>Data Analysis Dashboard</h1>
+    <div>
+        <label for="variable-select">Select Variables:</label>
+        <select id="variable-select" multiple></select>
+    </div>
+
+    <div>
+        <label for="date-range">Select Date Range:</label>
+        <input type="date" id="start-date"> to 
+        <input type="date" id="end-date">
+    </div>
+
+    <button onclick="updateChart()">Update Chart</button>
+
+    <div id="chart"></div>
+
+    <script>
+        let data = [];
+        let variables = new Set();
+
+        // Load the JSON data
+        async function loadData() {
+            const response = await fetch('data.json');
+            data = await response.json();
+
+            // Get unique variables
+            data.forEach(row => {
+                Object.keys(row).forEach(key => {
+                    if (key !== 'Timestamp') variables.add(key);
+                });
+            });
+
+            populateVariableSelect();
+        }
+
+        // Populate variable selection
+        function populateVariableSelect() {
+            const select = document.getElementById('variable-select');
+            variables.forEach(variable => {
+                const option = document.createElement('option');
+                option.value = variable;
+                option.textContent = variable;
+                select.appendChild(option);
+            });
+        }
+
+        // Filter data by date and selected variables
+        function filterData(startDate, endDate, selectedVariables) {
+            return data.filter(row => {
+                const rowDate = new Date(row['Timestamp']);
+                return rowDate >= new Date(startDate) && rowDate <= new Date(endDate);
+            }).map(row => {
+                const filteredRow = { Timestamp: row['Timestamp'] };
+                selectedVariables.forEach(variable => {
+                    if (variable in row) {
+                        filteredRow[variable] = row[variable];
+                    }
+                });
+                return filteredRow;
+            });
+        }
+
+        // Update chart with filtered data
+        function updateChart() {
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const selectedVariables = Array.from(document.getElementById('variable-select').selectedOptions).map(option => option.value);
+
+            if (!startDate || !endDate || selectedVariables.length === 0) {
+                alert("Please select a date range and at least one variable.");
+                return;
+            }
+
+            const filteredData = filterData(startDate, endDate, selectedVariables);
+            const traces = selectedVariables.map(variable => {
+                return {
+                    x: filteredData.map(row => row['Timestamp']),
+                    y: filteredData.map(row => row[variable]),
+                    mode: 'lines',
+                    name: variable
+                };
+            });
+
+            Plotly.newPlot('chart', traces, { title: 'Data Analysis' });
+        }
+
+        // Initial load
+        loadData();
+    </script>
+</body>
+</html>
