@@ -84,8 +84,8 @@
 <!-- Sidebar -->
 <div class="sidebar p-3">
     <div>
-        <h2>Navegação</h2>
-        <h6> SE Solar Arinos ☀</h6>
+        <h4>UFV Arinos ☀</h4><hr>
+        <h6>Páginas</h6>
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a href="#" class="nav-link" onclick="showSection('plots-section', 'Gráficos Temporais')">
@@ -100,7 +100,7 @@
         </ul>
         <hr>
         <div id="date-filter" class="date-filter">
-            <h6>Filtrar por Período</h6>
+            <h6>Filtro de Data</h6>
             <label for="start-date">Data Início:</label>
             <input type="date" id="start-date" class="form-control">
             <label for="end-date">Data Fim:</label>
@@ -300,7 +300,17 @@
         const parque = document.getElementById("parque-select").value;
         if (!parque || !dadosFiltrados[parque]) return;
 
-        const worksheet = XLSX.utils.json_to_sheet(dadosFiltrados[parque]);
+        // Preenche os valores nulos com 0
+        const dadosComZero = dadosFiltrados[parque].map(row => {
+            return {
+                ...row,
+                'P_GHI_1 Value': row['P_GHI_1 Value'] !== null ? row['P_GHI_1 Value'] : 0,
+                '_POA_ANG Value': row['_POA_ANG Value'] !== null ? row['_POA_ANG Value'] : 0,
+                '_T_INT Value': row['_T_INT Value'] !== null ? row['_T_INT Value'] : 0
+            };
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(dadosComZero);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Dados");
         XLSX.writeFile(workbook, `Dados_${parque}.xlsx`);
