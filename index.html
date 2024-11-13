@@ -19,12 +19,48 @@
             padding: 10px; /* Adiciona padding ao redor do gráfico */
             box-sizing: border-box; /* Inclui o padding na largura total */
         }
+
+        /* Estilos para ocultar e exibir seções */
+        .section {
+            display: none; /* Ocultar todas as seções por padrão */
+        }
+
+        .section.active {
+            display: block; /* Exibir apenas a seção ativa */
+        }
+
+        /* Botões de navegação */
+        .nav-button {
+            margin: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
 <h1>Visualização de Dados dos Parques Solares</h1>
-<div id="plots"></div>
+
+<!-- Botões de Navegação -->
+<button class="nav-button" onclick="showSection('plots-section')">Gráficos</button>
+<button class="nav-button" onclick="showSection('data-section')">Dados</button>
+
+<!-- Seção dos Gráficos -->
+<div id="plots-section" class="section active">
+    <div id="plots"></div>
+</div>
+
+<!-- Seção dos Dados -->
+<div id="data-section" class="section">
+    <h2>Dados dos Parques Solares</h2>
+    <select id="parque-select" onchange="mostrarDados()">
+        <option value="">Selecione um parque</option>
+        <option value="ARN08">Parque ARN08</option>
+        <option value="ARN09">Parque ARN09</option>
+        <option value="ARN10">Parque ARN10</option>
+    </select>
+    <div id="data-display"></div>
+</div>
 
 <script>
     // Lista dos nomes dos parques que correspondem aos arquivos JSON
@@ -78,8 +114,8 @@
                 overlaying: 'y',
                 side: 'right'
             },
-            legend: { x: 1.1, y: 1 },  // Posiciona a legenda fora do gráfico, à direita
-            margin: { l: 50, r: 100, t: 50, b: 50 },  // Adiciona margem ao redor do gráfico
+            legend: { x: 1.05, y: 1 },  // Ajuste a posição horizontal da legenda
+            margin: { l: 50, r: 80, t: 50, b: 50 },  // Ajusta a margem direita
             width: null,  // Define a largura automaticamente para 100% do contêiner
             height: 400,
             plot_bgcolor: "rgba(0,0,0,0)"  // Fundo transparente
@@ -95,6 +131,42 @@
 
     // Carregar e exibir gráficos para cada parque
     parques.forEach(parque => carregarDados(parque));
+
+    // Função para alternar entre seções (Gráficos e Dados)
+    function showSection(sectionId) {
+        document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+        document.getElementById(sectionId).classList.add('active');
+    }
+
+    // Função para mostrar os dados do parque selecionado na outra página
+    async function mostrarDados() {
+        const parque = document.getElementById("parque-select").value;
+        if (parque) {
+            const response = await fetch(`${parque}.json`);
+            const data = await response.json();
+            const tabelaHTML = `
+                <table border="1">
+                    <tr>
+                        <th>Data</th>
+                        <th>Irradiância</th>
+                        <th>Ângulo Tracker</th>
+                        <th>Temperatura</th>
+                    </tr>
+                    ${data.map(row => `
+                        <tr>
+                            <td>${new Date(row.Data).toLocaleString()}</td>
+                            <td>${row['P_GHI_1 Value']}</td>
+                            <td>${row['_POA_ANG Value']}</td>
+                            <td>${row['_T_INT Value']}</td>
+                        </tr>
+                    `).join('')}
+                </table>
+            `;
+            document.getElementById("data-display").innerHTML = tabelaHTML;
+        } else {
+            document.getElementById("data-display").innerHTML = "";
+        }
+    }
 </script>
 
 </body>
