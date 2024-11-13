@@ -1,101 +1,83 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Analysis Page</title>
+    <title>Visualização de Dados dos Parques Solares</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
 
-    <h1>Data Analysis Dashboard</h1>
-    <div>
-        <label for="variable-select">Select Variables:</label>
-        <select id="variable-select" multiple></select>
-    </div>
+<h1>Visualização de Dados dos Parques Solares</h1>
+<div id="plots"></div>
 
-    <div>
-        <label for="date-range">Select Date Range:</label>
-        <input type="date" id="start-date"> to 
-        <input type="date" id="end-date">
-    </div>
+<script>
+    // Lista dos nomes dos parques que correspondem aos arquivos JSON
+    const parques = ["ARN08", "ARN09", "ARN10"];  // Substitua com os nomes reais
 
-    <button onclick="updateChart()">Update Chart</button>
+    // Função para carregar e exibir dados de cada parque
+    async function carregarDados(parque) {
+        const response = await fetch(`json_data/${parque}.json`);
+        const data = await response.json();
 
-    <div id="chart"></div>
+        // Extrair dados para gráficos
+        const datas = data.map(d => new Date(d.Data));
+        const irradiancia = data.map(d => d['P_GHI_1 Value']);
+        const angulo = data.map(d => d['_POA_ANG Value']);
+        const temperatura = data.map(d => d['_T_INT Value']);
 
-    <script>
-        let data = [];
-        let variables = new Set();
+        // Criar traces para cada variável
+        const traceIrradiancia = {
+            x: datas,
+            y: irradiancia,
+            mode: 'lines',
+            name: 'Irradiância',
+            line: { color: 'rgba(0, 0, 255, 0.5)' }
+        };
 
-        // Load the JSON data
-        async function loadData() {
-            const response = await fetch('data.json');
-            data = await response.json();
+        const traceAngulo = {
+            x: datas,
+            y: angulo,
+            mode: 'lines',
+            name: 'Ângulo Tracker',
+            yaxis: 'y2',
+            line: { color: 'rgba(0, 128, 0, 0.5)' }
+        };
 
-            // Get unique variables
-            data.forEach(row => {
-                Object.keys(row).forEach(key => {
-                    if (key !== 'Timestamp') variables.add(key);
-                });
-            });
+        const traceTemperatura = {
+            x: datas,
+            y: temperatura,
+            mode: 'lines',
+            name: 'Temperatura',
+            yaxis: 'y2',
+            line: { color: 'rgba(255, 0, 0, 0.5)' }
+        };
 
-            populateVariableSelect();
-        }
+        // Configuração do layout com eixo secundário
+        const layout = {
+            title: `Dados do Parque: ${parque}`,
+            xaxis: { title: 'Data' },
+            yaxis: { title: 'Irradiância' },
+            yaxis2: {
+                title: 'Ângulo e Temperatura',
+                overlaying: 'y',
+                side: 'right'
+            },
+            width: 800,
+            height: 400,
+            plot_bgcolor: "rgba(0,0,0,0)"  // Fundo transparente
+        };
 
-        // Populate variable selection
-        function populateVariableSelect() {
-            const select = document.getElementById('variable-select');
-            variables.forEach(variable => {
-                const option = document.createElement('option');
-                option.value = variable;
-                option.textContent = variable;
-                select.appendChild(option);
-            });
-        }
+        // Renderizar gráfico no div com ID "plots"
+        const plotDiv = document.createElement('div');
+        plotDiv.id = `plot_${parque}`;
+        document.getElementById('plots').appendChild(plotDiv);
 
-        // Filter data by date and selected variables
-        function filterData(startDate, endDate, selectedVariables) {
-            return data.filter(row => {
-                const rowDate = new Date(row['Timestamp']);
-                return rowDate >= new Date(startDate) && rowDate <= new Date(endDate);
-            }).map(row => {
-                const filteredRow = { Timestamp: row['Timestamp'] };
-                selectedVariables.forEach(variable => {
-                    if (variable in row) {
-                        filteredRow[variable] = row[variable];
-                    }
-                });
-                return filteredRow;
-            });
-        }
+        Plotly.newPlot(plotDiv.id, [traceIrradiancia, traceAngulo, traceTemperatura], layout);
+    }
 
-        // Update chart with filtered data
-        function updateChart() {
-            const startDate = document.getElementById('start-date').value;
-            const endDate = document.getElementById('end-date').value;
-            const selectedVariables = Array.from(document.getElementById('variable-select').selectedOptions).map(option => option.value);
+    // Carregar e exibir gráficos para cada parque
+    parques.forEach(parque => carregarDados(parque));
+</script>
 
-            if (!startDate || !endDate || selectedVariables.length === 0) {
-                alert("Please select a date range and at least one variable.");
-                return;
-            }
-
-            const filteredData = filterData(startDate, endDate, selectedVariables);
-            const traces = selectedVariables.map(variable => {
-                return {
-                    x: filteredData.map(row => row['Timestamp']),
-                    y: filteredData.map(row => row[variable]),
-                    mode: 'lines',
-                    name: variable
-                };
-            });
-
-            Plotly.newPlot('chart', traces, { title: 'Data Analysis' });
-        }
-
-        // Initial load
-        loadData();
-    </script>
 </body>
 </html>
