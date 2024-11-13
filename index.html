@@ -117,7 +117,7 @@
             <input type="date" id="start-date" class="form-control">
             <label for="end-date">Data Fim:</label>
             <input type="date" id="end-date" class="form-control">
-            <button onclick="aplicarFiltro()" class="btn btn-primary mt-2">Aplicar Filtro</button>
+            <button onclick="aplicarFiltro()" class="btn btn-primary mt-2 w-100">Aplicar Filtro</button>
         </div>
     </div>
     <div class="sidebar-footer">
@@ -157,7 +157,29 @@
         const response = await fetch(`${parque}.json`);
         const data = await response.json();
         dadosOriginais[parque] = data; // Armazena os dados completos para uso futuro
+
+        if (parque === parques[0]) {
+            // Define as datas mínima e máxima para o controle de datas com base no primeiro parque
+            definirLimitesDeData(data);
+        }
+
         atualizarGrafico(parque, data);
+    }
+
+    function definirLimitesDeData(data) {
+        const datas = data.map(d => new Date(d.Data));
+        const dataMinima = new Date(Math.min(...datas));
+        const dataMaxima = new Date(Math.max(...datas));
+
+        // Define o valor mínimo e máximo nos campos de data
+        document.getElementById("start-date").setAttribute("min", dataMinima.toISOString().split('T')[0]);
+        document.getElementById("start-date").setAttribute("max", dataMaxima.toISOString().split('T')[0]);
+        document.getElementById("end-date").setAttribute("min", dataMinima.toISOString().split('T')[0]);
+        document.getElementById("end-date").setAttribute("max", dataMaxima.toISOString().split('T')[0]);
+
+        // Define os valores padrão nos campos de data
+        document.getElementById("start-date").value = dataMinima.toISOString().split('T')[0];
+        document.getElementById("end-date").value = dataMaxima.toISOString().split('T')[0];
     }
 
     function atualizarGrafico(parque, data) {
