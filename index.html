@@ -209,13 +209,14 @@
         };
 
         const layout = {
-            title: `Dados do Parque: ${parque}`,
-            xaxis: { title: 'Data' },
-            yaxis: { title: 'Irradiância' },
+            title: `Parque Solar ${parque}`,
+            xaxis: { title: 'Data', showgrid: false },  // Remove o grid no eixo X
+            yaxis: { title: 'Irradiância', showgrid: false },  // Remove o grid no eixo Y principal
             yaxis2: {
                 title: 'Ângulo e Temperatura',
                 overlaying: 'y',
-                side: 'right'
+                side: 'right',
+                showgrid: false  // Remove o grid no eixo Y secundário
             },
             legend: { x: 1.05, y: 1 },
             margin: { l: 50, r: 50, t: 50, b: 50 },
