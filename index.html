@@ -8,6 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Link para o Font Awesome para adicionar ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script> <!-- Biblioteca para exportação Excel -->
     <style>
         /* Ajustes para a sidebar */
         body {
@@ -81,16 +82,11 @@
 
         /* Estilo para o controle de datas, visível apenas na seção de gráficos */
         .date-filter {
-            display: none;
             margin-top: 20px;
-        }
-
-        .date-filter.active {
-            display: block;
         }
     </style>
 </head>
-<body>
+<body onload="inicializarPagina()"> <!-- Chama a função para inicializar a página -->
 
 <!-- Sidebar -->
 <div class="sidebar p-3">
@@ -145,6 +141,9 @@
             <option value="ARN09">Parque ARN09</option>
             <option value="ARN10">Parque ARN10</option>
         </select>
+        <div class="mt-3">
+            <button onclick="exportarTabelaParaExcel()" class="btn btn-success w-100 mb-2">Exportar Tabela para Excel</button>
+        </div>
         <div id="data-display" class="mt-3"></div>
     </div>
 </div>
@@ -152,6 +151,12 @@
 <script>
     const parques = ["ARN08", "ARN09", "ARN10"];
     let dadosOriginais = {}; // Armazena os dados completos para cada parque
+    let dadosFiltrados = {}; // Armazena os dados filtrados para exportação
+
+    // Função para inicializar a página
+    function inicializarPagina() {
+        showSection('plots-section', 'Gráficos Temporais'); // Mostra a seção de gráficos e o filtro de data
+    }
 
     async function carregarDados(parque) {
         const response = await fetch(`${parque}.json`);
@@ -246,17 +251,9 @@
         
         document.title = pageTitle;
         document.getElementById("page-title").textContent = pageTitle;
-
-        // Exibe ou oculta o controle de data na sidebar
-        const dateFilter = document.getElementById("date-filter");
-        if (sectionId === 'plots-section') {
-            dateFilter.classList.add("active");
-        } else {
-            dateFilter.classList.remove("active");
-        }
     }
 
-    // Aplica o filtro de data ao gráfico atual
+    // Aplica o filtro de data ao gráfico atual e à tabela de dados
     function aplicarFiltro() {
         const startDate = new Date(document.getElementById("start-date").value);
         const endDate = new Date(document.getElementById("end-date").value);
@@ -269,12 +266,60 @@
         // Filtra e atualiza o gráfico para cada parque
         document.getElementById("plots").innerHTML = ""; // Limpa gráficos antigos
         parques.forEach(parque => {
-            const dadosFiltrados = dadosOriginais[parque].filter(d => {
+            dadosFiltrados[parque] = dadosOriginais[parque].filter(d => {
                 const data = new Date(d.Data);
                 return data >= startDate && data <= endDate;
             });
-            atualizarGrafico(parque, dadosFiltrados);
+            atualizarGrafico(parque, dadosFiltrados[parque]);
         });
+
+        // Atualiza a tabela de dados para o parque selecionado
+        mostrarDados();
+    }
+
+    // Função para exportar a tabela exibida em um arquivo Excel
+    function exportarTabelaParaExcel() {
+        const parque = document.getElementById("parque-select").value;
+        if (!parque || !dadosFiltrados[parque]) return;
+
+        const worksheet = XLSX.utils.json_to_sheet(dadosFiltrados[parque]);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Dados");
+        XLSX.writeFile(workbook, `Dados_${parque}.xlsx`);
+    }
+
+    // Função para mostrar os dados filtrados na tabela de dados
+    function mostrarDados() {
+        const parque = document.getElementById("parque-select").value;
+        if (!parque || !dadosFiltrados[parque]) return;
+
+        const tabelaHTML = `
+            <table class="table table-striped mt-3">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Irradiância</th>
+                        <th>Ângulo Tracker</th>
+                        <th>Temperatura</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${dadosFiltrados[parque].map(row => `
+                        <tr>
+                            <td>${new Date(row.Data).toLocaleString()}</td>
+                            <td>${formatarValor(row['P_GHI_1 Value'])}</td>
+                            <td>${formatarValor(row['_POA_ANG Value'])}</td>
+                            <td>${formatarValor(row['_T_INT Value'])}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        document.getElementById("data-display").innerHTML = tabelaHTML;
+    }
+
+    function formatarValor(valor) {
+        return valor != null ? valor.toFixed(2) : '-';
     }
 </script>
 
