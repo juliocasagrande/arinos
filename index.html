@@ -34,7 +34,7 @@
         .content {
             flex-grow: 1;
             padding: 20px;
-            width: 100%;
+            width: calc(100% - 200px); /* Considera a largura da sidebar */
         }
 
         /* Contêiner para manter os gráficos dentro da largura da página e com padding */
@@ -42,7 +42,6 @@
             width: 100%;
             padding: 10px;
             box-sizing: border-box;
-            overflow-x: hidden;
         }
 
         .plot-container {
@@ -148,7 +147,7 @@
             y: irradiancia,
             mode: 'lines',
             name: 'Irradiância',
-            line: { color: 'rgba(255, 99, 132, 0.8)' } // Vermelho pastel similar ao Chart.js
+            line: { color: 'rgba(255, 99, 132, 0.8)' }
         };
 
         const traceAngulo = {
@@ -157,7 +156,7 @@
             mode: 'lines',
             name: 'Ângulo Tracker',
             yaxis: 'y2',
-            line: { color: 'rgba(54, 162, 235, 0.8)' } // Azul pastel similar ao Chart.js
+            line: { color: 'rgba(54, 162, 235, 0.8)' }
         };
 
         const traceTemperatura = {
@@ -166,7 +165,7 @@
             mode: 'lines',
             name: 'Temperatura',
             yaxis: 'y2',
-            line: { color: 'rgba(75, 192, 192, 0.8)' } // Verde pastel similar ao Chart.js
+            line: { color: 'rgba(75, 192, 192, 0.8)' }
         };
 
         const layout = {
@@ -179,8 +178,8 @@
                 side: 'right'
             },
             legend: { x: 1.05, y: 1 },
-            margin: { l: 50, r: 80, t: 50, b: 50 },
-            width: '100%',
+            margin: { l: 50, r: 50, t: 50, b: 50 }, // Ajusta as margens
+            autosize: true, // Garante que o gráfico se ajuste ao contêiner
             height: 400,
             plot_bgcolor: "rgba(0,0,0,0)"
         };
