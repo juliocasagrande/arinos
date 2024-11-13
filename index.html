@@ -4,62 +4,87 @@
     <meta charset="UTF-8">
     <title>Visualização de Dados dos Parques Solares</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Link para o Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* Define que cada gráfico ocupe 100% da largura da página */
-        #plots {
+        /* Ajustes para a sidebar */
+        body {
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .sidebar {
+            min-width: 250px;
+            max-width: 250px;
+            background-color: #343a40;
+            color: white;
+        }
+
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .content {
+            flex-grow: 1;
+            padding: 20px;
             width: 100%;
         }
 
+        /* Define que cada gráfico ocupe 100% da largura da página */
         .plot-container {
-            width: 100%; /* Ocupa 100% da largura da tela */
-            margin-bottom: 40px; /* Espaçamento entre gráficos */
-            padding: 10px; /* Adiciona padding ao redor do gráfico */
-            box-sizing: border-box; /* Inclui o padding na largura total */
+            width: 100%; /* Ocupa 100% da largura */
+            margin-bottom: 40px;
+            padding: 10px;
+            box-sizing: border-box;
         }
 
         /* Estilos para ocultar e exibir seções */
         .section {
-            display: none; /* Ocultar todas as seções por padrão */
+            display: none;
         }
 
         .section.active {
-            display: block; /* Exibir apenas a seção ativa */
-        }
-
-        /* Botões de navegação */
-        .nav-button {
-            margin: 10px;
-            padding: 10px 20px;
-            cursor: pointer;
+            display: block;
         }
     </style>
 </head>
 <body>
 
-<h1>Visualização de Dados dos Parques Solares</h1>
-
-<!-- Botões de Navegação -->
-<button class="nav-button" onclick="showSection('plots-section')">Gráficos</button>
-<button class="nav-button" onclick="showSection('data-section')">Dados</button>
-
-<!-- Seção dos Gráficos -->
-<div id="plots-section" class="section active">
-    <div id="plots"></div>
+<!-- Sidebar -->
+<div class="sidebar p-3">
+    <h2>Navegação</h2>
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a href="#" class="nav-link" onclick="showSection('plots-section')">Gráficos</a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" onclick="showSection('data-section')">Dados</a>
+        </li>
+    </ul>
 </div>
 
-<!-- Seção dos Dados -->
-<div id="data-section" class="section">
-    <h2>Dados dos Parques Solares</h2>
-    <select id="parque-select" onchange="mostrarDados()">
-        <option value="">Selecione um parque</option>
-        <option value="ARN08">Parque ARN08</option>
-        <option value="ARN09">Parque ARN09</option>
-        <option value="ARN10">Parque ARN10</option>
-    </select>
-    <div id="data-display"></div>
+<!-- Conteúdo Principal -->
+<div class="content">
+    <h1>Visualização de Dados dos Parques Solares</h1>
+
+    <!-- Seção dos Gráficos -->
+    <div id="plots-section" class="section active">
+        <div id="plots"></div>
+    </div>
+
+    <!-- Seção dos Dados -->
+    <div id="data-section" class="section">
+        <h2>Dados dos Parques Solares</h2>
+        <select id="parque-select" class="form-select" onchange="mostrarDados()">
+            <option value="">Selecione um parque</option>
+            <option value="ARN08">Parque ARN08</option>
+            <option value="ARN09">Parque ARN09</option>
+            <option value="ARN10">Parque ARN10</option>
+        </select>
+        <div id="data-display" class="mt-3"></div>
+    </div>
 </div>
 
 <script>
@@ -115,7 +140,7 @@
                 side: 'right'
             },
             legend: { x: 1.05, y: 1 },  // Ajuste a posição horizontal da legenda
-            margin: { l: 50, r: 80, t: 50, b: 50 },  // Ajusta a margem direita
+            margin: { l: 50, r: 80, t: 50, b: 50 },
             width: null,  // Define a largura automaticamente para 100% do contêiner
             height: 400,
             plot_bgcolor: "rgba(0,0,0,0)"  // Fundo transparente
@@ -145,21 +170,25 @@
             const response = await fetch(`${parque}.json`);
             const data = await response.json();
             const tabelaHTML = `
-                <table border="1">
-                    <tr>
-                        <th>Data</th>
-                        <th>Irradiância</th>
-                        <th>Ângulo Tracker</th>
-                        <th>Temperatura</th>
-                    </tr>
-                    ${data.map(row => `
+                <table class="table table-striped mt-3">
+                    <thead>
                         <tr>
-                            <td>${new Date(row.Data).toLocaleString()}</td>
-                            <td>${row['P_GHI_1 Value']}</td>
-                            <td>${row['_POA_ANG Value']}</td>
-                            <td>${row['_T_INT Value']}</td>
+                            <th>Data</th>
+                            <th>Irradiância</th>
+                            <th>Ângulo Tracker</th>
+                            <th>Temperatura</th>
                         </tr>
-                    `).join('')}
+                    </thead>
+                    <tbody>
+                        ${data.map(row => `
+                            <tr>
+                                <td>${new Date(row.Data).toLocaleString()}</td>
+                                <td>${row['P_GHI_1 Value']}</td>
+                                <td>${row['_POA_ANG Value']}</td>
+                                <td>${row['_T_INT Value']}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
                 </table>
             `;
             document.getElementById("data-display").innerHTML = tabelaHTML;
