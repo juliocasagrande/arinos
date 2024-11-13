@@ -41,12 +41,11 @@
         /* Contêiner para manter os gráficos dentro da largura da página e com padding */
         #plots-container {
             width: 100%;
-            padding: 10px;
             box-sizing: border-box;
         }
 
         .plot-container {
-            width: 100%;
+            width: 100% !important; /* Garante que ocupe 100% da largura disponível */
             margin-bottom: 40px;
         }
 
@@ -92,7 +91,7 @@
 <div class="sidebar p-3">
     <div>
         <h2>Navegação</h2>
-        <h6> SE Solar Arinos ☀</h6>
+        <h6>SE Solar Arinos ☀</h6>
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a href="#" class="nav-link" onclick="showSection('plots-section', 'Gráficos Temporais')">
@@ -138,14 +137,16 @@
     <!-- Seção dos Dados -->
     <div id="data-section" class="section">
         <h4>Selecione o parque a ser analisado</h4>
-        <select id="parque-select" class="form-select" onchange="mostrarDados()">
-            <option value="">Selecione um parque</option>
-            <option value="ARN08">Parque ARN08</option>
-            <option value="ARN09">Parque ARN09</option>
-            <option value="ARN10">Parque ARN10</option>
-        </select>
-        <div class="mt-3">
-            <button onclick="exportarTabelaParaExcel()" class="btn btn-success w-100 mb-2">Exportar Tabela para Excel</button>
+        <div class="d-flex align-items-center mb-3">
+            <select id="parque-select" class="form-select me-2" style="flex: 1;">
+                <option value="">Selecione um parque</option>
+                <option value="ARN08">Parque ARN08</option>
+                <option value="ARN09">Parque ARN09</option>
+                <option value="ARN10">Parque ARN10</option>
+            </select>
+            <button onclick="exportarTabelaParaExcel()" class="btn btn-success" style="white-space: nowrap;">
+                Exportar para Excel
+            </button>
         </div>
         <div id="data-display" class="mt-3"></div>
     </div>
@@ -233,7 +234,7 @@
             },
             legend: { x: 1.05, y: 1 },
             margin: { l: 50, r: 50, t: 50, b: 50 },
-            width: "100%",  // Define a largura como 100%
+            autosize: true,
             height: 400,
             plot_bgcolor: "rgba(0,0,0,0)"
         };
