@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <title>Visualização de Dados dos Parques Solares</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        /* Define que cada gráfico ocupe 100% da largura da página */
+        #plots {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .plot-container {
+            width: 90%; /* Ocupa 90% da largura da tela, ajuste se necessário */
+            max-width: 1200px; /* Limita a largura máxima */
+            margin-bottom: 40px; /* Espaçamento entre gráficos */
+        }
+    </style>
 </head>
 <body>
 
@@ -62,17 +77,17 @@
                 overlaying: 'y',
                 side: 'right'
             },
-            width: 800,
+            width: null,  // Define a largura automaticamente (ocupa 100% do contêiner)
             height: 400,
             plot_bgcolor: "rgba(0,0,0,0)"  // Fundo transparente
         };
 
         // Renderizar gráfico no div com ID "plots"
         const plotDiv = document.createElement('div');
-        plotDiv.id = `plot_${parque}`;
+        plotDiv.className = 'plot-container';
         document.getElementById('plots').appendChild(plotDiv);
 
-        Plotly.newPlot(plotDiv.id, [traceIrradiancia, traceAngulo, traceTemperatura], layout);
+        Plotly.newPlot(plotDiv, [traceIrradiancia, traceAngulo, traceTemperatura], layout);
     }
 
     // Carregar e exibir gráficos para cada parque
