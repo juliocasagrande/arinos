@@ -2,13 +2,11 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Gráficos Temporais</title> <!-- Título inicial da página -->
+    <title>Gráficos Temporais</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-    <!-- Link para o Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Link para o Font Awesome para adicionar ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script> <!-- Biblioteca para exportação Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
     <style>
         /* Ajustes para a sidebar */
         body {
@@ -38,14 +36,13 @@
             width: calc(100% - 200px); /* Considera a largura da sidebar */
         }
 
-        /* Contêiner para manter os gráficos dentro da largura da página e com padding */
         #plots-container {
             width: 100%;
             box-sizing: border-box;
         }
 
         .plot-container {
-            width: 100% !important; /* Garante que ocupe 100% da largura disponível */
+            width: 100% !important;
             margin-bottom: 40px;
         }
 
@@ -65,13 +62,11 @@
             border-top: 1px solid #555;
         }
 
-        /* Estilo para rolagem na tabela de dados */
         #data-display {
-            max-height: 600px;
+            max-height: 650px;
             overflow-y: auto;
         }
 
-        /* Mantém o cabeçalho da tabela fixo */
         table thead th {
             position: sticky;
             top: 0;
@@ -79,19 +74,18 @@
             z-index: 1;
         }
 
-        /* Estilo para o controle de datas, visível apenas na seção de gráficos */
         .date-filter {
             margin-top: 20px;
         }
     </style>
 </head>
-<body onload="inicializarPagina()"> <!-- Chama a função para inicializar a página -->
+<body onload="inicializarPagina()"> 
 
 <!-- Sidebar -->
 <div class="sidebar p-3">
     <div>
         <h2>Navegação</h2>
-        <h6>SE Solar Arinos ☀</h6>
+        <h6> SE Solar Arinos ☀</h6>
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a href="#" class="nav-link" onclick="showSection('plots-section', 'Gráficos Temporais')">
@@ -104,11 +98,7 @@
                 </a>
             </li>
         </ul>
-
-        <!-- Linha separadora -->
         <hr>
-
-        <!-- Controle de seleção de datas para filtrar o período dos gráficos -->
         <div id="date-filter" class="date-filter">
             <h6>Filtrar por Período</h6>
             <label for="start-date">Data Início:</label>
@@ -116,6 +106,7 @@
             <label for="end-date">Data Fim:</label>
             <input type="date" id="end-date" class="form-control">
             <button onclick="aplicarFiltro()" class="btn btn-primary mt-2 w-100">Aplicar Filtro</button>
+            <button onclick="limparFiltros()" class="btn btn-danger mt-2 w-100">Limpar Filtros</button>
         </div>
     </div>
     <div class="sidebar-footer">
@@ -125,16 +116,14 @@
 
 <!-- Conteúdo Principal -->
 <div class="content">
-    <h1 id="page-title">Gráficos Temporais</h1> <!-- Título inicial da página -->
+    <h1 id="page-title">Gráficos Temporais</h1> 
 
-    <!-- Seção dos Gráficos -->
     <div id="plots-section" class="section active">
         <div id="plots-container">
             <div id="plots"></div>
         </div>
     </div>
 
-    <!-- Seção dos Dados -->
     <div id="data-section" class="section">
         <h4>Selecione o parque a ser analisado</h4>
         <div class="d-flex align-items-center mb-3">
@@ -154,21 +143,19 @@
 
 <script>
     const parques = ["ARN08", "ARN09", "ARN10"];
-    let dadosOriginais = {}; // Armazena os dados completos para cada parque
-    let dadosFiltrados = {}; // Armazena os dados filtrados para exportação
+    let dadosOriginais = {};
+    let dadosFiltrados = {};
 
-    // Função para inicializar a página
     function inicializarPagina() {
-        showSection('plots-section', 'Gráficos Temporais'); // Mostra a seção de gráficos e o filtro de data
+        showSection('plots-section', 'Gráficos Temporais');
     }
 
     async function carregarDados(parque) {
         const response = await fetch(`${parque}.json`);
         const data = await response.json();
-        dadosOriginais[parque] = data; // Armazena os dados completos para uso futuro
+        dadosOriginais[parque] = data;
 
         if (parque === parques[0]) {
-            // Define as datas mínima e máxima para o controle de datas com base no primeiro parque
             definirLimitesDeData(data);
         }
 
@@ -180,13 +167,11 @@
         const dataMinima = new Date(Math.min(...datas));
         const dataMaxima = new Date(Math.max(...datas));
 
-        // Define o valor mínimo e máximo nos campos de data
         document.getElementById("start-date").setAttribute("min", dataMinima.toISOString().split('T')[0]);
         document.getElementById("start-date").setAttribute("max", dataMaxima.toISOString().split('T')[0]);
         document.getElementById("end-date").setAttribute("min", dataMinima.toISOString().split('T')[0]);
         document.getElementById("end-date").setAttribute("max", dataMaxima.toISOString().split('T')[0]);
 
-        // Define os valores padrão nos campos de data
         document.getElementById("start-date").value = dataMinima.toISOString().split('T')[0];
         document.getElementById("end-date").value = dataMaxima.toISOString().split('T')[0];
     }
@@ -246,23 +231,30 @@
         Plotly.newPlot(plotDiv, [traceIrradiancia, traceAngulo, traceTemperatura], layout);
     }
 
-    // Carrega e exibe gráficos para cada parque
     parques.forEach(parque => carregarDados(parque));
 
     function showSection(sectionId, pageTitle) {
         document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
         document.getElementById(sectionId).classList.add('active');
-        
         document.title = pageTitle;
         document.getElementById("page-title").textContent = pageTitle;
+
+        if (sectionId === 'plots-section') {
+            atualizarGraficoLayout();
+        }
     }
 
-    // Aplica o filtro de data ao gráfico atual e à tabela de dados
+    function atualizarGraficoLayout() {
+        const gráficos = document.querySelectorAll('.plot-container');
+        gráficos.forEach(plot => {
+            Plotly.Plots.resize(plot);
+        });
+    }
+
     function aplicarFiltro() {
         const startDate = new Date(document.getElementById("start-date").value);
-        const endDate = new Date(document.getElementById("end-date").value);
-        
-        // Ajusta a data final para incluir o final do dia
+        let endDate = new Date(document.getElementById("end-date").value);
+        endDate.setDate(endDate.getDate() + 1);
         endDate.setHours(23, 59, 59, 999);
 
         if (isNaN(startDate) || isNaN(endDate)) {
@@ -270,8 +262,7 @@
             return;
         }
 
-        // Filtra e atualiza o gráfico para cada parque
-        document.getElementById("plots").innerHTML = ""; // Limpa gráficos antigos
+        document.getElementById("plots").innerHTML = "";
         parques.forEach(parque => {
             dadosFiltrados[parque] = dadosOriginais[parque].filter(d => {
                 const data = new Date(d.Data);
@@ -280,11 +271,31 @@
             atualizarGrafico(parque, dadosFiltrados[parque]);
         });
 
+        mostrarDados();
+    }
+
+    function limparFiltros() {
+        // Encontra as datas mínima e máxima dos dados originais
+        const dadosDeTodosOsParques = Object.values(dadosOriginais).flat(); // Junta os dados de todos os parques
+        const datas = dadosDeTodosOsParques.map(d => new Date(d.Data));
+        const dataMinima = new Date(Math.min(...datas));
+        const dataMaxima = new Date(Math.max(...datas));
+
+        // Preenche os campos de data com as datas mínima e máxima
+        document.getElementById("start-date").value = dataMinima.toISOString().split('T')[0];
+        document.getElementById("end-date").value = dataMaxima.toISOString().split('T')[0];
+
+        // Atualiza os gráficos para exibir todos os dados
+        document.getElementById("plots").innerHTML = "";
+        parques.forEach(parque => {
+            dadosFiltrados[parque] = dadosOriginais[parque];
+            atualizarGrafico(parque, dadosFiltrados[parque]);
+        });
+
         // Atualiza a tabela de dados para o parque selecionado
         mostrarDados();
     }
 
-    // Função para exportar a tabela exibida em um arquivo Excel
     function exportarTabelaParaExcel() {
         const parque = document.getElementById("parque-select").value;
         if (!parque || !dadosFiltrados[parque]) return;
@@ -295,7 +306,6 @@
         XLSX.writeFile(workbook, `Dados_${parque}.xlsx`);
     }
 
-    // Função para mostrar os dados filtrados na tabela de dados
     function mostrarDados() {
         const parque = document.getElementById("parque-select").value;
         if (!parque || !dadosFiltrados[parque]) return;
