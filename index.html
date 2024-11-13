@@ -17,7 +17,7 @@
         }
 
         .sidebar {
-            min-width: 200px; /* Reduz a largura mínima */
+            min-width: 200px;
             max-width: 200px;
             background-color: #343a40;
             color: white;
@@ -37,7 +37,6 @@
             width: 100%;
         }
 
-        /* Define que cada gráfico ocupe 100% da largura da página */
         .plot-container {
             width: 100%;
             margin-bottom: 40px;
@@ -45,7 +44,6 @@
             box-sizing: border-box;
         }
 
-        /* Estilos para ocultar e exibir seções */
         .section {
             display: none;
         }
@@ -54,7 +52,6 @@
             display: block;
         }
 
-        /* Estilo do rodapé da sidebar */
         .sidebar-footer {
             padding: 10px;
             font-size: 0.9em;
@@ -65,8 +62,16 @@
 
         /* Estilo para rolagem na tabela de dados */
         #data-display {
-            max-height: 600px; /* Define a altura máxima da área da tabela */
-            overflow-y: auto; /* Ativa a rolagem vertical */
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        /* Mantém o cabeçalho da tabela fixo */
+        table thead th {
+            position: sticky;
+            top: 0;
+            background-color: #ffffff;
+            z-index: 1;
         }
     </style>
 </head>
@@ -76,7 +81,7 @@
 <div class="sidebar p-3">
     <div>
         <h2>Navegação</h2>
-        <h4>SE Solar Arinos ☀</h4>
+        <h6>SE Solar Arinos ☀</h6>
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a href="#" class="nav-link" onclick="showSection('plots-section', 'Gráficos Temporais')">
@@ -118,21 +123,17 @@
 </div>
 
 <script>
-    // Lista dos nomes dos parques que correspondem aos arquivos JSON
-    const parques = ["ARN08", "ARN09", "ARN10"];  // Atualize com os nomes reais dos arquivos JSON
+    const parques = ["ARN08", "ARN09", "ARN10"];
 
-    // Função para carregar e exibir dados de cada parque
     async function carregarDados(parque) {
-        const response = await fetch(`${parque}.json`);  // Acessa diretamente o arquivo JSON na raiz
+        const response = await fetch(`${parque}.json`);
         const data = await response.json();
 
-        // Extrair dados para gráficos
         const datas = data.map(d => new Date(d.Data));
         const irradiancia = data.map(d => d['P_GHI_1 Value']);
         const angulo = data.map(d => d['_POA_ANG Value']);
         const temperatura = data.map(d => d['_T_INT Value']);
 
-        // Criar traces para cada variável
         const traceIrradiancia = {
             x: datas,
             y: irradiancia,
@@ -159,7 +160,6 @@
             line: { color: 'rgba(255, 0, 0, 0.5)' }
         };
 
-        // Configuração do layout com eixo secundário e ajuste da legenda
         const layout = {
             title: `Dados do Parque: ${parque}`,
             xaxis: { title: 'Data' },
@@ -169,14 +169,13 @@
                 overlaying: 'y',
                 side: 'right'
             },
-            legend: { x: 1.05, y: 1 },  // Ajuste a posição horizontal da legenda
+            legend: { x: 1.05, y: 1 },
             margin: { l: 50, r: 80, t: 50, b: 50 },
-            width: null,  // Define a largura automaticamente para 100% do contêiner
+            width: null,
             height: 400,
-            plot_bgcolor: "rgba(0,0,0,0)"  // Fundo transparente
+            plot_bgcolor: "rgba(0,0,0,0)"
         };
 
-        // Renderizar gráfico no div com ID "plots"
         const plotDiv = document.createElement('div');
         plotDiv.className = 'plot-container';
         document.getElementById('plots').appendChild(plotDiv);
@@ -184,24 +183,19 @@
         Plotly.newPlot(plotDiv, [traceIrradiancia, traceAngulo, traceTemperatura], layout);
     }
 
-    // Carregar e exibir gráficos para cada parque
     parques.forEach(parque => carregarDados(parque));
 
-    // Função para alternar entre seções (Gráficos e Dados) e atualizar o título da página
     function showSection(sectionId, pageTitle) {
         document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
         document.getElementById(sectionId).classList.add('active');
         
-        // Atualiza o título da página e o título da seção
         document.title = pageTitle;
         document.getElementById("page-title").textContent = pageTitle;
     }
 
-    // Função para mostrar os dados do parque selecionado na outra página
     async function mostrarDados() {
         const parque = document.getElementById("parque-select").value;
         
-        // Limpa o conteúdo anterior da tabela enquanto os novos dados são carregados
         document.getElementById("data-display").innerHTML = "Carregando...";
 
         if (parque) {
@@ -231,12 +225,10 @@
             `;
             document.getElementById("data-display").innerHTML = tabelaHTML;
         } else {
-            // Se nenhum parque foi selecionado, limpar o conteúdo
             document.getElementById("data-display").innerHTML = "";
         }
     }
 
-    // Função para formatar valores numéricos: arredonda para 2 casas decimais e substitui valores nulos
     function formatarValor(valor) {
         return valor != null ? valor.toFixed(2) : '-';
     }
