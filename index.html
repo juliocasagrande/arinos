@@ -78,6 +78,16 @@
             background-color: #ffffff;
             z-index: 1;
         }
+
+        /* Estilo para o controle de datas, visível apenas na seção de gráficos */
+        .date-filter {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .date-filter.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -86,7 +96,7 @@
 <div class="sidebar p-3">
     <div>
         <h2>Navegação</h2>
-        <h6> SE Solar Arinos ☀</h6>
+        <h6>SE Solar Arinos ☀</h6>
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a href="#" class="nav-link" onclick="showSection('plots-section', 'Gráficos Temporais')">
@@ -99,6 +109,16 @@
                 </a>
             </li>
         </ul>
+
+        <!-- Controle de seleção de datas para filtrar o período dos gráficos -->
+        <div id="date-filter" class="date-filter">
+            <h6>Filtrar por Período</h6>
+            <label for="start-date">Data Início:</label>
+            <input type="date" id="start-date" class="form-control">
+            <label for="end-date">Data Fim:</label>
+            <input type="date" id="end-date" class="form-control">
+            <button onclick="aplicarFiltro()" class="btn btn-primary mt-2">Aplicar Filtro</button>
+        </div>
     </div>
     <div class="sidebar-footer">
         Designed by Júlio Casagrande
@@ -131,17 +151,21 @@
 
 <script>
     const parques = ["ARN08", "ARN09", "ARN10"];
+    let dadosOriginais = {}; // Armazena os dados completos para cada parque
 
     async function carregarDados(parque) {
         const response = await fetch(`${parque}.json`);
         const data = await response.json();
+        dadosOriginais[parque] = data; // Armazena os dados completos para uso futuro
+        atualizarGrafico(parque, data);
+    }
 
+    function atualizarGrafico(parque, data) {
         const datas = data.map(d => new Date(d.Data));
         const irradiancia = data.map(d => d['P_GHI_1 Value']);
         const angulo = data.map(d => d['_POA_ANG Value']);
         const temperatura = data.map(d => d['_T_INT Value']);
 
-        // Definindo cores similares aos gráficos do Chart.js (tons pastel)
         const traceIrradiancia = {
             x: datas,
             y: irradiancia,
@@ -178,8 +202,8 @@
                 side: 'right'
             },
             legend: { x: 1.05, y: 1 },
-            margin: { l: 50, r: 50, t: 50, b: 50 }, // Ajusta as margens
-            autosize: true, // Garante que o gráfico se ajuste ao contêiner
+            margin: { l: 50, r: 50, t: 50, b: 50 },
+            autosize: true,
             height: 400,
             plot_bgcolor: "rgba(0,0,0,0)"
         };
@@ -191,6 +215,7 @@
         Plotly.newPlot(plotDiv, [traceIrradiancia, traceAngulo, traceTemperatura], layout);
     }
 
+    // Carrega e exibe gráficos para cada parque
     parques.forEach(parque => carregarDados(parque));
 
     function showSection(sectionId, pageTitle) {
@@ -199,46 +224,35 @@
         
         document.title = pageTitle;
         document.getElementById("page-title").textContent = pageTitle;
-    }
 
-    async function mostrarDados() {
-        const parque = document.getElementById("parque-select").value;
-        
-        document.getElementById("data-display").innerHTML = "Carregando...";
-
-        if (parque) {
-            const response = await fetch(`${parque}.json`);
-            const data = await response.json();
-            const tabelaHTML = `
-                <table class="table table-striped mt-3">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Irradiância</th>
-                            <th>Ângulo Tracker</th>
-                            <th>Temperatura</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.map(row => `
-                            <tr>
-                                <td>${new Date(row.Data).toLocaleString()}</td>
-                                <td>${formatarValor(row['P_GHI_1 Value'])}</td>
-                                <td>${formatarValor(row['_POA_ANG Value'])}</td>
-                                <td>${formatarValor(row['_T_INT Value'])}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
-            document.getElementById("data-display").innerHTML = tabelaHTML;
+        // Exibe ou oculta o controle de data na sidebar
+        const dateFilter = document.getElementById("date-filter");
+        if (sectionId === 'plots-section') {
+            dateFilter.classList.add("active");
         } else {
-            document.getElementById("data-display").innerHTML = "";
+            dateFilter.classList.remove("active");
         }
     }
 
-    function formatarValor(valor) {
-        return valor != null ? valor.toFixed(2) : '-';
+    // Aplica o filtro de data ao gráfico atual
+    function aplicarFiltro() {
+        const startDate = new Date(document.getElementById("start-date").value);
+        const endDate = new Date(document.getElementById("end-date").value);
+
+        if (isNaN(startDate) || isNaN(endDate)) {
+            alert("Por favor, selecione ambas as datas de início e fim.");
+            return;
+        }
+
+        // Filtra e atualiza o gráfico para cada parque
+        document.getElementById("plots").innerHTML = ""; // Limpa gráficos antigos
+        parques.forEach(parque => {
+            const dadosFiltrados = dadosOriginais[parque].filter(d => {
+                const data = new Date(d.Data);
+                return data >= startDate && data <= endDate;
+            });
+            atualizarGrafico(parque, dadosFiltrados);
+        });
     }
 </script>
 
