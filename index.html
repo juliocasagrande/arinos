@@ -12,11 +12,11 @@
 
 <script>
     // Lista dos nomes dos parques que correspondem aos arquivos JSON
-    const parques = ["ARN08", "ARN09", "ARN10"];  // Substitua com os nomes reais
+    const parques = ["ARN08", "ARN09", "ARN10"];  // Atualize com os nomes reais dos arquivos JSON
 
     // Função para carregar e exibir dados de cada parque
     async function carregarDados(parque) {
-        const response = await fetch(`json_data/${parque}.json`);
+        const response = await fetch(`${parque}.json`);  // Acessa diretamente o arquivo JSON na raiz
         const data = await response.json();
 
         // Extrair dados para gráficos
