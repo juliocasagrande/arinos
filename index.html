@@ -62,6 +62,12 @@
             text-align: center;
             border-top: 1px solid #555;
         }
+
+        /* Estilo para rolagem na tabela de dados */
+        #data-display {
+            max-height: 400px; /* Define a altura máxima da área da tabela */
+            overflow-y: auto; /* Ativa a rolagem vertical */
+        }
     </style>
 </head>
 <body>
@@ -99,7 +105,7 @@
 
     <!-- Seção dos Dados -->
     <div id="data-section" class="section">
-        <h2>Dados dos Parques Solares</h2>
+        <h2>Selecione o parque a ser analisado</h2>
         <select id="parque-select" class="form-select" onchange="mostrarDados()">
             <option value="">Selecione um parque</option>
             <option value="ARN08">Parque ARN08</option>
