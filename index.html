@@ -95,6 +95,13 @@
             overflow-y: scroll; /* Exibe a barra de rolagem vertical */
         }
 
+        .badge {
+            font-size: 1.1rem;
+            padding: 0.5em 1em;
+            border-radius: 10px;
+            color: rgb(255, 255, 255);
+        }
+
     </style>
 </head>
 <body onload="inicializarPagina()"> 
@@ -162,7 +169,7 @@
     </div>
 
     <div id="data-section" class="section">
-        <p><b>Para que os dados sejam exibidos é necessário que o parque seja escolhido e o botão 'Aplicar Filtro' seja aplicado</b></p>
+        <p><span class="badge bg-secondary">Para que os dados sejam exibidos é necessário que o parque seja escolhido e o botão 'Aplicar Filtro' seja pressionado</span></p>
         <div class="d-flex align-items-center mb-3">
             <select id="parque-select" class="form-select me-2" style="flex: 1;">
                 <option value="">Selecione um parque</option>
