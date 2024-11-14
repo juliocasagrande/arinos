@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Gráficos Temporais</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <style>
+        /* Ajustes para a sidebar */
+        body {
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .sidebar {
+            min-width: 200px;
+            max-width: 200px;
+            background-color: #343a40;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: visible;
+        }
+
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+        }
+
+        .content {
+            flex-grow: 1;
+            padding: 20px;
+            width: calc(100% - 200px); /* Considera a largura da sidebar */
+        }
+
+        #plots-container {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .plot-container {
+            width: 100% !important;
+            margin-bottom: 40px;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .sidebar-footer {
+            padding: 10px;
+            font-size: 0.9em;
+            color: #aaa;
+            text-align: center;
+            border-top: 1px solid #555;
+        }
+
+        #data-display {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        table thead th {
+            position: sticky;
+            top: 0;
+            background-color: #ffffff;
+            z-index: 1;
+        }
+
+        .date-filter {
+            margin-top: 20px;
+        }
+
+        #variaveis-select {
+            transition: width 0.3s ease, height 0.3s ease; /* Transição suave para largura e altura */
+            width: 100%; /* Largura padrão */
+            height: auto; /* Altura padrão */
+        }
+
+        #variaveis-select:hover {
+            width: 250px; /* Aumenta a largura para 250px no hover */
+            height: 300px; /* Aumenta a altura para 300px no hover */
+            background-color: white; /* Fundo branco para legibilidade */
+            color: black; /* Texto preto para contraste */
+            position: relative; /* Define a posição como relativa para permitir o controle do z-index */
+            z-index: 1000; /* Traz a caixa para frente, acima dos gráficos */
+            overflow-y: scroll; /* Exibe a barra de rolagem vertical */
+        }
+
+    </style>
+</head>
+<body onload="inicializarPagina()"> 
+
+<!-- Sidebar -->
+<div class="sidebar p-3">
+    <div>
+        <h4>UFV Arinos ☀</h4>
+        <p><i>By Júlio Casagrande</i></p><hr>
+        <h6>Páginas</h6>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a href="#" class="nav-link" onclick="showSection('plots-section', 'Gráficos Temporais')">
+                    <i class="fas fa-chart-line"></i> Gráficos
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" onclick="showSection('data-section', 'Dados dos Parques Solares')">
+                    <i class="fas fa-table"></i> Dados
+                </a>
+            </li>
+        </ul>
+        <hr>
+        <div id="date-filter" class="date-filter">
+            <h6>Filtro de Data</h6>
+            <label for="start-date">Data Início:</label>
+            <input type="date" id="start-date" class="form-control">
+            <label for="end-date">Data Fim:</label>
+            <input type="date" id="end-date" class="form-control">
+            <button onclick="aplicarFiltro()" class="btn btn-primary mt-2 w-100">Aplicar Filtro</button>
+            <button onclick="limparFiltros()" class="btn btn-danger mt-2 w-100">Limpar Filtros</button>
+        </div>
+        <hr>
+        <!-- Caixa de Seleção Múltipla para Variáveis -->
+        <h6 class="mt-3">Variáveis para Exibir</h6>
+        <select id="variaveis-select" class="form-select" multiple>
+            <option value="ESTM_Measurements_P_GHI_1 Value" selected>Irradiância Global HZ 1</option>
+            <option value="ESTM_Measurements_P_GHI_2 Value">Irradiância Global HZ 2</option>
+            <option value="ESTM_Measurements_P_GRI Value">Irradiância Global Refletida</option>
+            <option value="ESTM_Measurements_T_AR Value" selected>Temperatura Ambiente</option>
+            <option value="ESTM_A1_Measurements_P_POA Value">Irradiância Plano Tracker MD1</option>
+            <option value="ESTM_A1_Measurements_P_POA_REAR Value">Irradiância Refletida Pl Tracker MD1</option>
+            <option value="ESTM_A1_Measurements_T_MOD_1 Value">Temperatura 1 do Módulo 1</option>
+            <option value="ESTM_A1_Measurements_T_MOD_2 Value">Temperatura 2 do Módulo 1</option>
+            <option value="ESTM_A2_Measurements_P_POA Value">Irradiância Plano Tracker MD2</option>
+            <option value="ESTM_A2_Measurements_P_POA_REAR Value">Irradiância Refletida Pl Tracker MD2</option>
+            <option value="ESTM_A2_Measurements_T_MOD_1 Value">Temperatura 1 do Módulo 2</option>
+            <option value="ESTM_A2_Measurements_T_MOD_2 Value">Temperatura 2 do Módulo 2</option>
+            <option value="ESTM_A2_Measurements_POA_ANG Value" selected>Ângulo do tracker</option>
+        </select>
+        <button onclick="atualizarGraficosSelecionados()" class="btn btn-primary mt-2 w-100">Atualizar Gráficos</button>
+        <button onclick="limparSelecaoVariaveis()" class="btn btn-danger mt-2 w-100">Limpar Seleção de Variáveis</button>
+        <button onclick="resetarVariaveisParaPadrao()" class="btn btn-secondary mt-2 w-100">Resetar para Padrão</button>
+    </div>
+</div>
+
+<!-- Conteúdo Principal -->
+<div class="content">
+    <h1 id="page-title">Gráficos Temporais</h1> 
+
+    <div id="plots-section" class="section active">
+        <div id="plots-container">
+            <div id="plots"></div>
+        </div>
+    </div>
+
+    <div id="data-section" class="section">
+        <p><b>Para que os dados sejam exibidos é necessário que o parque seja escolhido e o botão 'Aplicar Filtro' seja aplicado</b></p>
+        <div class="d-flex align-items-center mb-3">
+            <select id="parque-select" class="form-select me-2" style="flex: 1;">
+                <option value="">Selecione um parque</option>
+                <option value="ARN08">Parque ARN08</option>
+                <option value="ARN09">Parque ARN09</option>
+                <option value="ARN10">Parque ARN10</option>
+            </select>
+            <button onclick="exportarTabelaParaExcel()" class="btn btn-success" style="white-space: nowrap;">
+                Exportar para Excel
+            </button>
+        </div>
+        <div id="data-display" class="mt-3"></div>
+    </div>
+</div>
+
+<script>
+    const parques = ["ARN08", "ARN09", "ARN10"];
+    const nomesApresentacao = {
+        "ESTM_Measurements_P_GHI_1 Value": "Irradiância Global HZ 1",
+        "ESTM_Measurements_P_GHI_2 Value": "Irradiância Global HZ 2",
+        "ESTM_Measurements_P_GRI Value": "Irradiância Global Refletida",
+        "ESTM_Measurements_T_AR Value": "Temperatura Ambiente",
+        "ESTM_A1_Measurements_P_POA Value": "Irradiância Plano Tracker MD1",
+        "ESTM_A1_Measurements_P_POA_REAR Value": "Irradiância Refletida Pl Tracker MD1",
+        "ESTM_A1_Measurements_T_MOD_1 Value": "Temperatura 1 do Módulo 1",
+        "ESTM_A1_Measurements_T_MOD_2 Value": "Temperatura 2 do Módulo 1",
+        "ESTM_A2_Measurements_P_POA Value": "Irradiância Plano Tracker MD2",
+        "ESTM_A2_Measurements_P_POA_REAR Value": "Irradiância Refletida Pl Tracker MD2",
+        "ESTM_A2_Measurements_T_MOD_1 Value": "Temperatura 1 do Módulo 2",
+        "ESTM_A2_Measurements_T_MOD_2 Value": "Temperatura 2 do Módulo 2",
+        "ESTM_A2_Measurements_POA_ANG Value": "Ângulo do tracker"
+    };
+    let dadosOriginais = {};
+    let dadosFiltrados = {};
+
+    function inicializarPagina() {
+        showSection('plots-section', 'Gráficos Temporais');
+        carregarTodosDados();
+    }
+
+    async function carregarTodosDados() {
+        for (const parque of parques) {
+            await carregarDados(parque);
+        }
+    }
+
+    async function carregarDados(parque) {
+        const response = await fetch(`${parque}.json`);
+        const data = await response.json();
+        dadosOriginais[parque] = data;
+
+        if (parque === parques[0]) {
+            definirLimitesDeData(data);
+        }
+
+        atualizarGrafico(parque, data);
+    }
+
+    function resetarVariaveisParaPadrao() {
+        // Referência ao elemento da multisseleção
+        const variaveisSelect = document.getElementById("variaveis-select");
+
+        // Limpa todas as seleções
+        for (let i = 0; i < variaveisSelect.options.length; i++) {
+            variaveisSelect.options[i].selected = false;
+        }
+
+        // Seleciona apenas as variáveis padrão
+        const variaveisPadrao = ["ESTM_Measurements_P_GHI_1 Value", "ESTM_Measurements_T_AR Value", "ESTM_A2_Measurements_POA_ANG Value"];
+        for (let i = 0; i < variaveisSelect.options.length; i++) {
+            if (variaveisPadrao.includes(variaveisSelect.options[i].value)) {
+                variaveisSelect.options[i].selected = true;
+            }
+        }
+
+        // Atualiza os gráficos com as variáveis padrão selecionadas
+        atualizarGraficosSelecionados();
+    }
+
+
+    function atualizarGraficosSelecionados() {
+    // Limpar os gráficos atuais
+        document.getElementById("plots").innerHTML = "";
+
+        // Atualizar gráficos para cada parque com as variáveis selecionadas
+        parques.forEach(parque => {
+            atualizarGrafico(parque, dadosFiltrados[parque] || dadosOriginais[parque]);
+        });
+    }
+
+    function definirLimitesDeData(data) {
+        const datas = data
+            .map(d => new Date(d["ESTM_Measurements_P_GHI_1 Timestamp"]))
+            .filter(d => !isNaN(d) && d.getFullYear() >= 2024);
+        
+        const dataMinima = new Date(Math.min(...datas));
+        const dataMaxima = new Date(Math.max(...datas));
+
+        document.getElementById("start-date").setAttribute("min", dataMinima.toISOString().split('T')[0]);
+        document.getElementById("start-date").setAttribute("max", dataMaxima.toISOString().split('T')[0]);
+        document.getElementById("end-date").setAttribute("min", dataMinima.toISOString().split('T')[0]);
+        document.getElementById("end-date").setAttribute("max", dataMaxima.toISOString().split('T')[0]);
+
+        document.getElementById("start-date").value = dataMinima.toISOString().split('T')[0];
+        document.getElementById("end-date").value = dataMaxima.toISOString().split('T')[0];
+    }
+
+    function limparSelecaoVariaveis() {
+        // Seleciona todas as opções da multisseleção
+        const variaveisSelect = document.getElementById("variaveis-select");
+        for (let i = 0; i < variaveisSelect.options.length; i++) {
+            variaveisSelect.options[i].selected = true;
+        }
+
+        // Chama a função para atualizar os gráficos com todas as variáveis selecionadas
+        atualizarGraficosSelecionados();
+    }
+
+
+    function atualizarGrafico(parque, data) {
+    // Obtém as variáveis selecionadas na multisseleção
+        const variaveisSelecionadas = Array.from(document.getElementById("variaveis-select").selectedOptions)
+            .map(option => option.value);
+
+        const traces = variaveisSelecionadas.map(variavel => {
+            const x = data
+                .map(d => new Date(d[`${variavel.split(" ")[0]} Timestamp`]))
+                .filter(date => !isNaN(date) && date.getFullYear() >= 2024);
+
+            const y = data
+                .map(d => d[variavel])
+                .filter((_, index) => !isNaN(x[index]));
+
+            // Determina o eixo com base no valor máximo
+            const maxValue = Math.max(...y);
+            const yaxis = maxValue <= 150 ? 'y2' : 'y';
+
+            return {
+                x: x,
+                y: y,
+                mode: 'lines',
+                name: nomesApresentacao[variavel] || variavel,  // Usa o nome de apresentação ou o original
+                line: { width: 1.5 },
+                yaxis: yaxis // Define o eixo para o trace
+            };
+        });
+
+        // Configuração do layout com o eixo secundário
+        const layout = {
+            title: `Parque Solar ${parque}`,
+            xaxis: { title: 'Data', showgrid: false },
+            yaxis: { title: 'Valores', showgrid: false },
+            yaxis2: {
+                title: 'Valores Secundários',
+                overlaying: 'y',
+                side: 'right',
+                showgrid: false
+            },
+            autosize: true,
+            height: 400,
+            plot_bgcolor: "rgba(0,0,0,0)",
+            legend: {
+                x: 1.04,         // Coloca a legenda à direita do gráfico
+                y: 1,           // Alinha a legenda no topo
+                xanchor: 'left', // Ancoragem à esquerda
+                yanchor: 'top',  // Ancoragem ao topo
+                orientation: 'v' // Exibe a legenda em formato vertical
+            },
+            margin: { l: 50, r: 100, t: 50, b: 50 } // Aumenta a margem direita para dar espaço à legenda
+        };
+
+        const plotDiv = document.createElement('div');
+        plotDiv.className = 'plot-container';
+        document.getElementById('plots').appendChild(plotDiv);
+
+        Plotly.newPlot(plotDiv, traces, layout);
+    }
+
+
+
+    function showSection(sectionId, pageTitle) {
+        document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
+        document.getElementById(sectionId).classList.add('active');
+        document.title = pageTitle;
+        document.getElementById("page-title").textContent = pageTitle;
+
+        if (sectionId === 'data-section') {
+            mostrarDados();
+        } else if (sectionId === 'plots-section') {
+            atualizarGraficoLayout();
+        }
+    }
+
+    function atualizarGraficoLayout() {
+        const graficos = document.querySelectorAll('.plot-container');
+        graficos.forEach(plot => {
+            Plotly.Plots.resize(plot);
+        });
+    }
+
+    function aplicarFiltro() {
+        const startDate = new Date(document.getElementById("start-date").value);
+        const endDate = new Date(document.getElementById("end-date").value);
+
+        // Definir a data de início e final como o período completo
+        startDate.setDate(startDate.getDate() + 1);
+        endDate.setDate(endDate.getDate() + 1);
+
+        if (isNaN(startDate) || isNaN(endDate)) {
+            alert("Por favor, selecione ambas as datas de início e fim.");
+            return;
+        }
+
+        document.getElementById("plots").innerHTML = "";
+        parques.forEach(parque => {
+            dadosFiltrados[parque] = dadosOriginais[parque].filter(d => {
+                const data = new Date(d["ESTM_Measurements_P_GHI_1 Timestamp"]);
+                return data >= startDate && data <= endDate && !isNaN(data) && data.getFullYear() >= 2024;
+            });
+            atualizarGrafico(parque, dadosFiltrados[parque]);
+        });
+
+        mostrarDados();  // Atualizar a tabela de dados
+    }
+
+    function limparFiltros() {
+        const dadosDeTodosOsParques = Object.values(dadosOriginais).flat();
+        const datas = dadosDeTodosOsParques
+            .map(d => new Date(d["ESTM_Measurements_P_GHI_1 Timestamp"]))
+            .filter(d => !isNaN(d) && d.getFullYear() >= 2024);
+
+        const dataMinima = new Date(Math.min(...datas));
+        const dataMaxima = new Date(Math.max(...datas));
+
+        document.getElementById("start-date").value = dataMinima.toISOString().split('T')[0];
+        document.getElementById("end-date").value = dataMaxima.toISOString().split('T')[0];
+
+        document.getElementById("plots").innerHTML = "";
+        parques.forEach(parque => {
+            dadosFiltrados[parque] = dadosOriginais[parque];
+            atualizarGrafico(parque, dadosFiltrados[parque]);
+        });
+
+        mostrarDados();
+    }
+
+    function exportarTabelaParaExcel() {
+        const parque = document.getElementById("parque-select").value;
+        if (!parque || !dadosFiltrados[parque]) return;
+
+        const dadosComZero = dadosFiltrados[parque].map(row => ({
+            ...row,
+            'P_GHI_1 Value': row['P_GHI_1 Value'] !== null ? row['P_GHI_1 Value'] : 0,
+            '_POA_ANG Value': row['_POA_ANG Value'] !== null ? row['_POA_ANG Value'] : 0,
+            '_T_INT Value': row['_T_INT Value'] !== null ? row['_T_INT Value'] : 0
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(dadosComZero);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Dados");
+        XLSX.writeFile(workbook, `Dados_${parque}.xlsx`);
+    }
+
+    function mostrarDados() {
+        const parque = document.getElementById("parque-select").value;
+        if (!parque || !dadosFiltrados[parque]) return;
+
+        // Obtém as variáveis selecionadas na multisseleção
+        const variaveisSelecionadas = Array.from(document.getElementById("variaveis-select").selectedOptions)
+            .map(option => option.value);
+
+        // Construção dinâmica do cabeçalho com nomes de apresentação das variáveis selecionadas
+        const cabeçalhoHTML = variaveisSelecionadas.map(variavel => `<th>${nomesApresentacao[variavel]}</th>`).join('');
+
+        // Construção das linhas de dados com as variáveis selecionadas
+        const linhasHTML = dadosFiltrados[parque].map(row => {
+            return `
+                <tr>
+                    <td>${new Date(row["ESTM_Measurements_P_GHI_1 Timestamp"]).toLocaleString()}</td>
+                    ${variaveisSelecionadas.map(variavel => `<td>${formatarValor(row[variavel])}</td>`).join('')}
+                </tr>
+            `;
+        }).join('');
+
+        // Construção completa da tabela
+        const tabelaHTML = `
+            <table class="table table-striped mt-3">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        ${cabeçalhoHTML}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${linhasHTML}
+                </tbody>
+            </table>
+        `;
+        document.getElementById("data-display").innerHTML = tabelaHTML;
+    }
+
+    function formatarValor(valor) {
+        return valor != null ? valor.toFixed(2) : '-';
+    }
+</script>
+
+</body>
+</html>
