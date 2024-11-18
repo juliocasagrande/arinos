@@ -49,6 +49,7 @@
 
         .section {
             display: none;
+            clear: both;
         }
 
         .section.active {
@@ -115,12 +116,27 @@
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a href="#" class="nav-link" onclick="showSection('plots-section', 'Gráficos Temporais')">
-                    <i class="fas fa-chart-line"></i> Gráficos
+                    <i class="fas fa-chart-line"></i> Gráficos Históricos
                 </a>
             </li>
             <li class="nav-item">
                 <a href="#" class="nav-link" onclick="showSection('data-section', 'Dados dos Parques Solares')">
-                    <i class="fas fa-table"></i> Dados
+                    <i class="fas fa-table"></i> Dados Históricos
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" onclick="showSection('teoricas-section', 'Gráficos de Potências Teóricas')">
+                    <i class="fas fa-bolt"></i> Gráficos de Potências Teóricas
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" onclick="showSection('teoricas-data-section', 'Dados de Potências Teóricas')">
+                    <i class="fas fa-table"></i> Dados de Potências Teóricas
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" onclick="showSection('curvas-section', 'Curvas Características')">
+                    <i class="fas fa-chart-area"></i> Curvas Características
                 </a>
             </li>
         </ul>
@@ -183,7 +199,72 @@
         </div>
         <div id="data-display" class="mt-3"></div>
     </div>
+
+    <div id="curvas-section" class="section">
+        <h5>Selecione as curvas que deseja visualizar:</h5>
+        <div id="irradiancia-checkboxes" class="d-flex flex-wrap">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="irradiancia-200" value="200" checked>
+                <label class="form-check-label" for="irradiancia-200">200 W/m²</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="irradiancia-400" value="400" checked>
+                <label class="form-check-label" for="irradiancia-400">400 W/m²</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="irradiancia-600" value="600" checked>
+                <label class="form-check-label" for="irradiancia-600">600 W/m²</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="irradiancia-800" value="800" checked>
+                <label class="form-check-label" for="irradiancia-800">800 W/m²</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="irradiancia-1000" value="1000" checked>
+                <label class="form-check-label" for="irradiancia-1000">1000 W/m²</label>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <label for="irradiancia-interpolada" class="form-label">Interpolar Irradiância (W/m²):</label>
+            <div class="d-flex align-items-center mb-3">
+                <input type="number" id="irradiancia-interpolada" class="form-control me-2" style="flex: 2;" placeholder="Digite a irradiância desejada. Ex: 750.50">
+                <button onclick="CurvasCaracteristicas.plotarInterpolado()" class="btn btn-primary me-2" style="flex: 1;">Adicionar Curva Interpolada</button>
+                <button onclick="CurvasCaracteristicas.redefinirCurvas()" class="btn btn-danger" style="flex: 1;">Redefinir Curvas</button>
+            </div>
+        </div>        
+        <div id="curvas-plot" class="mt-4"></div>
+        <div id="potencias-maximas" class="mt-3"></div>
+    </div> 
+
+    <div id="teoricas-section" class="section">
+        <div id="teorica-plots-container">
+            <div id="teorica-plots"></div>
+        </div>
+    </div>
+
+    <div id="teoricas-data-section" class="section">
+        <p>
+            <span class="badge bg-secondary">
+                Para que os dados sejam exibidos, é necessário que o parque seja escolhido e o botão 'Aplicar Filtro' seja pressionado.
+            </span>
+        </p>
+        <div class="d-flex align-items-center mb-3">
+            <select id="teorica-parque-select" class="form-select me-2" style="flex: 1;">
+                <option value="">Selecione um parque</option>
+                <option value="ARN08">Parque ARN08</option>
+                <option value="ARN09">Parque ARN09</option>
+                <option value="ARN10">Parque ARN10</option>
+            </select>
+            <button onclick="exportarTabelaTeoricaParaExcel()" class="btn btn-success" style="white-space: nowrap;">
+                Exportar para Excel
+            </button>
+        </div>
+        <div id="teorica-data-display" class="mt-3" style="max-height: 600px; overflow-y: auto;"></div>
+    </div>  
+    
 </div>
+
 
 <script>
     const parques = ["ARN08", "ARN09", "ARN10"];
@@ -348,8 +429,6 @@
         Plotly.newPlot(plotDiv, traces, layout);
     }
 
-
-
     function showSection(sectionId, pageTitle) {
         document.querySelectorAll('.section').forEach(section => section.classList.remove('active'));
         document.getElementById(sectionId).classList.add('active');
@@ -360,6 +439,12 @@
             mostrarDados();
         } else if (sectionId === 'plots-section') {
             atualizarGraficoLayout();
+        } else if (sectionId === 'curvas-section') {
+            CurvasCaracteristicas.plotar();
+        } else if (sectionId === 'teoricas-data-section') {
+            mostrarDadosTeoricos();
+        } else if (sectionId === 'teoricas-section') {
+            carregarEExibirTeoricos();
         }
     }
 
@@ -374,7 +459,7 @@
         const startDate = new Date(document.getElementById("start-date").value);
         const endDate = new Date(document.getElementById("end-date").value);
 
-        // Definir a data de início e final como o período completo
+        // Ajustar as datas para o intervalo completo
         startDate.setDate(startDate.getDate() + 1);
         endDate.setDate(endDate.getDate() + 1);
 
@@ -392,10 +477,13 @@
             atualizarGrafico(parque, dadosFiltrados[parque]);
         });
 
-        mostrarDados();  // Atualizar a tabela de dados
+        carregarEExibirTeoricos(); // Atualiza os gráficos de potência teórica
+        mostrarDadosTeoricos();   // Atualiza a tabela de potência teórica
+        mostrarDados();           // Atualiza a tabela de dados históricos
     }
 
     function limparFiltros() {
+        // Obter os dados de todas as seções
         const dadosDeTodosOsParques = Object.values(dadosOriginais).flat();
         const datas = dadosDeTodosOsParques
             .map(d => new Date(d["ESTM_Measurements_P_GHI_1 Timestamp"]))
@@ -404,33 +492,51 @@
         const dataMinima = new Date(Math.min(...datas));
         const dataMaxima = new Date(Math.max(...datas));
 
+        // Redefinir os valores dos campos de data
         document.getElementById("start-date").value = dataMinima.toISOString().split('T')[0];
         document.getElementById("end-date").value = dataMaxima.toISOString().split('T')[0];
 
+        // Atualizar os gráficos e dados históricos
         document.getElementById("plots").innerHTML = "";
         parques.forEach(parque => {
             dadosFiltrados[parque] = dadosOriginais[parque];
             atualizarGrafico(parque, dadosFiltrados[parque]);
         });
 
+        // Atualizar a seção "Gráficos de Potências Teóricas"
+        carregarEExibirTeoricos();
+
+        // Atualizar a seção "Dados de Potências Teóricas"
+        mostrarDadosTeoricos();
+
+        // Atualizar os dados históricos
         mostrarDados();
     }
 
     function exportarTabelaParaExcel() {
-        const parque = document.getElementById("parque-select").value;
-        if (!parque || !dadosFiltrados[parque]) return;
+        const workbook = XLSX.utils.book_new(); // Cria um novo arquivo Excel
 
-        const dadosComZero = dadosFiltrados[parque].map(row => ({
-            ...row,
-            'P_GHI_1 Value': row['P_GHI_1 Value'] !== null ? row['P_GHI_1 Value'] : 0,
-            '_POA_ANG Value': row['_POA_ANG Value'] !== null ? row['_POA_ANG Value'] : 0,
-            '_T_INT Value': row['_T_INT Value'] !== null ? row['_T_INT Value'] : 0
-        }));
+        parques.forEach(parque => {
+            // Obter os dados do parque
+            const dados = dadosFiltrados[parque] || dadosOriginais[parque];
+            if (!dados) return;
 
-        const worksheet = XLSX.utils.json_to_sheet(dadosComZero);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Dados");
-        XLSX.writeFile(workbook, `Dados_${parque}.xlsx`);
+            // Preenche os valores nulos com 0
+            const dadosComZero = dados.map(row => {
+                const novaLinha = {};
+                Object.keys(row).forEach(key => {
+                    novaLinha[key] = row[key] !== null ? row[key] : 0;
+                });
+                return novaLinha;
+            });
+
+            // Cria a aba para o prefixo
+            const worksheet = XLSX.utils.json_to_sheet(dadosComZero);
+            XLSX.utils.book_append_sheet(workbook, worksheet, `Dados_${parque}`);
+        });
+
+        // Exporta o arquivo Excel
+        XLSX.writeFile(workbook, `Dados_Historicos.xlsx`);
     }
 
     function mostrarDados() {
@@ -474,6 +580,331 @@
     function formatarValor(valor) {
         return valor != null ? valor.toFixed(2) : '-';
     }
+
+    // ## PARTE DAS CURVAS DE IRRADIÂNCIA ##
+    const CurvasCaracteristicas = {
+        curvasReferencia: null,
+        curvasInterpoladas: [],
+        potenciaMaximaTexto: [],
+
+        async carregarDados() {
+            const response = await fetch('curvas_referencia.json');
+            this.curvasReferencia = await response.json();
+            this.adicionarEventosCheckboxes();
+            this.plotar();
+        },
+
+        adicionarEventosCheckboxes() {
+            const checkboxes = document.querySelectorAll('#irradiancia-checkboxes input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', () => this.plotar());
+            });
+        },
+
+        plotar() {
+            const irradianciasSelecionadas = Array.from(
+                document.querySelectorAll('#irradiancia-checkboxes input[type="checkbox"]:checked')
+            ).map(checkbox => checkbox.value);
+
+            if (irradianciasSelecionadas.length === 0) {
+                alert("Por favor, selecione pelo menos uma irradiância.");
+                return;
+            }
+
+            // Filtra as curvas a serem exibidas
+            const traces = irradianciasSelecionadas
+                .filter(irradiancia => !["2", "1200", "1400"].includes(irradiancia)) // Ignora as curvas de 2, 1200 e 1400
+                .map(irradiancia => {
+                    const x = this.curvasReferencia.map(ponto => ponto[`Tensao_${irradiancia}`]);
+                    const y = this.curvasReferencia.map(ponto => ponto[`Potencia_${irradiancia}`]);
+
+                    return {
+                        x: x,
+                        y: y,
+                        mode: 'lines',
+                        name: `${irradiancia} W/m²`
+                    };
+                });
+
+            Plotly.newPlot('curvas-plot', traces.concat(this.curvasInterpoladas), {
+                title: 'Curvas Características',
+                xaxis: { title: 'Tensão (V)', showgrid: false }, // Remove o grid do eixo X
+                yaxis: { title: 'Potência (W)', showgrid: false }, // Remove o grid do eixo Y
+                autosize: true
+            });
+
+            // Atualizar textos com valores de potência máxima e tensão máxima
+            this.atualizarPotenciasMaximas();
+        },
+
+        plotarInterpolado() {
+            const irradiancia = parseFloat(document.getElementById("irradiancia-interpolada").value);
+            if (isNaN(irradiancia) || irradiancia < 2 || irradiancia > 1400) {
+                alert("Por favor, insira uma irradiância válida entre 2 e 1400 W/m².");
+                return;
+            }
+
+            const irradianciasDisponiveis = this.curvasReferencia[0]
+                ? Object.keys(this.curvasReferencia[0])
+                    .filter(key => key.startsWith("Potencia_"))
+                    .map(key => parseFloat(key.replace("Potencia_", "")))
+                : [];
+
+            const irradianciaInferior = Math.max(...irradianciasDisponiveis.filter(i => i <= irradiancia));
+            const irradianciaSuperior = Math.min(...irradianciasDisponiveis.filter(i => i >= irradiancia));
+
+            if (irradianciaInferior === irradianciaSuperior) {
+                alert("A irradiância já corresponde a uma curva existente.");
+                return;
+            }
+
+            const interpolatedCurve = this.curvasReferencia.map((ponto) => {
+                const tensaoInferior = ponto[`Tensao_${irradianciaInferior}`];
+                const tensaoSuperior = ponto[`Tensao_${irradianciaSuperior}`];
+                const potenciaInferior = ponto[`Potencia_${irradianciaInferior}`];
+                const potenciaSuperior = ponto[`Potencia_${irradianciaSuperior}`];
+
+                const tensaoInterpolada =
+                    tensaoInferior +
+                    ((irradiancia - irradianciaInferior) / (irradianciaSuperior - irradianciaInferior)) *
+                    (tensaoSuperior - tensaoInferior);
+
+                const potenciaInterpolada =
+                    potenciaInferior +
+                    ((irradiancia - irradianciaInferior) / (irradianciaSuperior - irradianciaInferior)) *
+                    (potenciaSuperior - potenciaInferior);
+
+                return { tensao: tensaoInterpolada, potencia: potenciaInterpolada };
+            });
+
+            const trace = {
+                x: interpolatedCurve.map((p) => p.tensao),
+                y: interpolatedCurve.map((p) => p.potencia),
+                mode: "lines",
+                name: `Interpolada ${irradiancia} W/m²`,
+                line: {
+                    dash: "dot",
+                    width: 2
+                }
+            };
+
+            this.curvasInterpoladas.push(trace);
+            this.plotar();
+
+            // Calcular o ponto de potência máxima para a curva interpolada
+            const potenciaMaxima = Math.max(...interpolatedCurve.map((p) => p.potencia));
+            const tensaoMaxima = interpolatedCurve.find((p) => p.potencia === potenciaMaxima).tensao;
+
+            // Exibir o texto abaixo do gráfico
+            this.potenciaMaximaTexto.push(`Curva interpolada ${irradiancia} W/m²: Potência máxima = ${potenciaMaxima.toFixed(2)} W na tensão ${tensaoMaxima.toFixed(2)} V.`);
+            this.atualizarPotenciasMaximas();
+        },
+
+        atualizarPotenciasMaximas() {
+            const container = document.getElementById("potencias-maximas");
+            container.innerHTML = this.potenciaMaximaTexto.map(texto => `<p>${texto}</p>`).join('');
+        },
+
+        redefinirCurvas() {
+            // Limpar curvas interpoladas
+            this.curvasInterpoladas = [];
+            this.potenciaMaximaTexto = [];
+            // Selecionar todas as caixas
+            const checkboxes = document.querySelectorAll('#irradiancia-checkboxes input[type="checkbox"]');
+            checkboxes.forEach(checkbox => checkbox.checked = true);
+            // Plotar novamente
+            this.plotar();
+        }
+    };
+
+    // Parte das curvas teoricas
+    async function carregarDadosTeoricos() {
+        const potenciaTeoricaData = {};
+        const arquivosTeoricos = {
+            "ARN08": "ARN08_potencias_teoricas.json",
+            "ARN09": "ARN09_potencias_teoricas.json",
+            "ARN10": "ARN10_potencias_teoricas.json"
+        };
+
+        for (const [parque, arquivo] of Object.entries(arquivosTeoricos)) {
+            const response = await fetch(arquivo);
+            potenciaTeoricaData[parque] = await response.json();
+        }
+
+        return potenciaTeoricaData;
+    }
+
+    const nomesApresentacaoTeoricas = {
+        "ESTM_Measurements_P_GHI_1 Value": "Irradiância Global",
+        "ESTM_Measurements_T_AR Value": "Temperatura Ambiente",
+        "Potencia Teorica Value": "Potência Teórica"
+    };
+
+    function atualizarGraficosTeoricos(dataTeorica) {
+        document.getElementById("teorica-plots").innerHTML = ""; // Limpa gráficos anteriores
+
+        Object.entries(dataTeorica).forEach(([parque, registros]) => {
+            const startDate = new Date(document.getElementById("start-date").value);
+            const endDate = new Date(document.getElementById("end-date").value);
+
+            const dadosFiltrados = registros.filter(row => {
+                const timestamps = Object.keys(row).filter(key => key.endsWith("Timestamp"));
+                return timestamps.some(timestampKey => {
+                    const data = new Date(row[timestampKey]);
+                    return data >= startDate && data <= endDate;
+                });
+            });
+
+            const colunasTimestamp = Object.keys(dadosFiltrados[0]).filter(key => key.endsWith("Timestamp"));
+            const traces = colunasTimestamp.map(timestampKey => {
+                const valueKey = timestampKey.replace("Timestamp", "Value");
+                const x = dadosFiltrados.map(row => new Date(row[timestampKey]));
+                const y = dadosFiltrados.map(row => row[valueKey]);
+                const nomeLegivel = nomesApresentacaoTeoricas[valueKey] || valueKey;
+
+                return {
+                    x: x,
+                    y: y,
+                    mode: "lines",
+                    name: nomeLegivel,
+                    line: { width: 1.5 },
+                    yaxis: nomeLegivel === "Temperatura Ambiente" ? "y2" : "y" // Eixo Y secundário para Temperatura
+                };
+            });
+
+            const layout = {
+                title: `Parque Solar ${parque}`,
+                xaxis: { title: 'Data' },
+                yaxis: { title: 'Valores Primários' },
+                yaxis2: {
+                    title: 'Temperatura Ambiente',
+                    overlaying: 'y',
+                    side: 'right',
+                    showgrid: false
+                },
+                autosize: true
+            };
+
+            const plotDiv = document.createElement("div");
+            plotDiv.className = "plot-container";
+            document.getElementById("teorica-plots").appendChild(plotDiv);
+
+            Plotly.newPlot(plotDiv, traces, layout);
+        });
+    }
+
+    async function carregarEExibirTeoricos() {
+        const potenciaTeoricaData = await carregarDadosTeoricos();
+        atualizarGraficosTeoricos(potenciaTeoricaData);
+    }
+
+    // Parte de exportação de Dados Teóricos
+    async function mostrarDadosTeoricos() {
+        const parque = document.getElementById("teorica-parque-select").value;
+        if (!parque) return;
+
+        const response = await fetch(`${parque}_potencias_teoricas.json`);
+        const data = await response.json();
+
+        // Filtrar os dados com base na data
+        const startDate = new Date(document.getElementById("start-date").value);
+        const endDate = new Date(document.getElementById("end-date").value);
+
+        const dadosFiltrados = data.filter(row => {
+            const timestamps = Object.keys(row).filter(key => key.endsWith("Timestamp"));
+            return timestamps.some(timestampKey => {
+                const data = new Date(row[timestampKey]);
+                return data >= startDate && data <= endDate;
+            });
+        });
+
+        // Mapear nomes das colunas para os nomes desejados
+        const nomesApresentacao = {
+            "ESTM_Measurements_P_GHI_1 Timestamp": "Data",
+            "ESTM_Measurements_P_GHI_1 Value": "Irradiância Global",
+            "ESTM_Measurements_T_AR Value": "Temperatura Ambiente",
+            "Potencia Teorica Value": "Potência Teórica"
+        };
+
+        // Construção da tabela
+        const colunasTimestamp = Object.keys(data[0]).filter(key => key.endsWith("Timestamp"));
+        const colunasValores = colunasTimestamp.map(tsKey => tsKey.replace("Timestamp", "Value"));
+        const tabelaHTML = `
+            <table class="table table-striped mt-3">
+                <thead>
+                    <tr>
+                        <th>${nomesApresentacao[colunasTimestamp[0]]}</th>
+                        ${colunasValores.map(valueKey => `<th>${nomesApresentacao[valueKey]}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${dadosFiltrados.map(row => `
+                        <tr>
+                            <td>${new Date(row[colunasTimestamp[0]]).toLocaleString()}</td>
+                            ${colunasValores.map(valueKey => `
+                                <td>${row[valueKey] != null ? row[valueKey].toFixed(2) : '-'}</td>
+                            `).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+
+        document.getElementById("teorica-data-display").innerHTML = tabelaHTML;
+    }
+
+    async function exportarTabelaTeoricaParaExcel() {
+        const arquivosTeoricos = {
+            "ARN08": "ARN08_potencias_teoricas.json",
+            "ARN09": "ARN09_potencias_teoricas.json",
+            "ARN10": "ARN10_potencias_teoricas.json"
+        };
+
+        const workbook = XLSX.utils.book_new(); // Cria um novo arquivo Excel
+
+        for (const [parque, arquivo] of Object.entries(arquivosTeoricos)) {
+            const response = await fetch(arquivo);
+            const data = await response.json();
+
+            const startDate = new Date(document.getElementById("start-date").value);
+            const endDate = new Date(document.getElementById("end-date").value);
+
+            const dadosFiltrados = data.filter(row => {
+                const timestamps = Object.keys(row).filter(key => key.endsWith("Timestamp"));
+                return timestamps.some(timestampKey => {
+                    const data = new Date(row[timestampKey]);
+                    return data >= startDate && data <= endDate;
+                });
+            });
+
+            const colunasTimestamp = Object.keys(data[0]).filter(key => key.endsWith("Timestamp"));
+
+            const sheetData = dadosFiltrados.map(row => {
+                const result = { Data: new Date(row[colunasTimestamp[0]]).toLocaleString() };
+                colunasTimestamp.forEach(timestampKey => {
+                    const valueKey = timestampKey.replace("Timestamp", "Value");
+                    result[timestampKey.replace(" Timestamp", "")] = row[valueKey] != null ? row[valueKey] : 0; // Preenche valores nulos com 0
+                });
+                return result;
+            });
+
+            // Cria uma aba para o prefixo
+            const worksheet = XLSX.utils.json_to_sheet(sheetData);
+            XLSX.utils.book_append_sheet(workbook, worksheet, `Potências ${parque}`);
+        }
+
+        // Exporta o arquivo Excel
+        XLSX.writeFile(workbook, `Potencias_Teoricas_Todos.xlsx`);
+    }
+
+    // Inicialização
+    function inicializarPagina() {
+        CurvasCaracteristicas.carregarDados();
+        carregarTodosDados();
+        carregarEExibirTeoricos();
+        showSection('plots-section', 'Gráficos Temporais');
+    }
+
 </script>
 
 </body>
